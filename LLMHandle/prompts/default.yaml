@@ -1,0 +1,4 @@
+# prompts/default.yaml
+system: |
+  你是一个智能助手，请根据用户输入做出合理回应。
+user_prefix: ""

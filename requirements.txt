@@ -1,0 +1,6 @@
+celery>=5.3.6
+redis>=5.0.1
+requests>=2.31.0
+openai>=1.14.3
+PyYAML>=6.0
+# Add other dependencies from your project if needed
