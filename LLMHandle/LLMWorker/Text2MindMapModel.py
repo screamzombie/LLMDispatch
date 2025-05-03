@@ -4,8 +4,8 @@ import re
 import requests
 from abc import ABC, abstractmethod
 from openai import OpenAI
-from .config import DEEPSEEK_API_KEY, QWEN_API_KEY, DOUBAO_API_KEY, XFYUN_API_KEY
-from .prompt_loader import load_prompt 
+from LLMHandle.config import DEEPSEEK_API_KEY, QWEN_API_KEY, DOUBAO_API_KEY, XFYUN_API_KEY
+from LLMHandle.LLMWorker.PromptLoader import load_prompt 
 from dataclasses import dataclass
 
 
@@ -45,7 +45,9 @@ class DeepseekMindMapModelAPI(BaseMindMapModelAPI):
         self.prompt_config = load_prompt(role)
         self.temperature = temperature
 
-    def generate_code(self, query: str, temperature: float = self.temperature) -> str: # 默认情况下不需要传入温度，模型中已经设置了默认值
+    def generate_code(self, query: str, temperature: float = None) -> str: # 默认情况下不需要传入温度，模型中已经设置了默认值
+        if temperature is None:
+            temperature = self.temperature
         client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         response = client.chat.completions.create(
             model=self.model,
@@ -67,9 +69,29 @@ class DeepseekMindMapModelAPI(BaseMindMapModelAPI):
             code = code[:-len("```")]
         return code.strip() 
 
-    def execute(self, query: str, temperature: float = self.temperature) -> str:
+    def execute(self, query: str, temperature: float = None) -> str:
+        if temperature is None:
+            temperature = self.temperature
         code = self.generate_code(query, temperature)
         processed_code = self.postprocess_code(code)
         return processed_code
 
+    def change_temperature(self, temperature: float):
+        self.temperature = temperature
+
+
+# --- 总调度类 ---
+class MindMapGenerationManager:
+    _registry = {
+        "deepseek": DeepseekMindMapModelAPI,                
+    }
+
+    def __init__(self, use_api: str = "deepseek", role: str = "mindmap"):
+        if use_api not in self._registry:
+            raise ValueError(f"不支持的 API: {use_api}")
+        self.use_api = use_api
+        self.client = self._registry[use_api](role=role)
+
+    def execute(self, query: str) -> str:
+        return self.client.execute(query)
 

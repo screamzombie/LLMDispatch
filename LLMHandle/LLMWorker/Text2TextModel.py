@@ -4,8 +4,8 @@ import re
 import requests
 from abc import ABC, abstractmethod
 from openai import OpenAI
-from .config import DEEPSEEK_API_KEY, QWEN_API_KEY, DOUBAO_API_KEY, XFYUN_API_KEY
-from .prompt_loader import load_prompt 
+from LLMHandle.config import DEEPSEEK_API_KEY, QWEN_API_KEY, DOUBAO_API_KEY, XFYUN_API_KEY
+from LLMHandle.LLMWorker.PromptLoader import load_prompt 
 
 
 # --- 抽象基类 ---
