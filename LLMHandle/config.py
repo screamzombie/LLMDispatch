@@ -1,15 +1,8 @@
-# ai_slave/config.py
-"""
-config.py
-
-集中管理环境配置，加载根目录下的 .env 中的变量。
-"""
 import os
 from dotenv import load_dotenv
 
 # 加载根目录下的 .env 文件
 load_dotenv()
-
 
 #--------------------str->str-------------------#
 # DeepSeek 服务 API Key（文本摘要/润色）
