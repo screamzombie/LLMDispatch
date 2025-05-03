@@ -28,7 +28,20 @@ class BaseMindMapModelAPI(ABC):
     @abstractmethod
     def execute(self, query: str,temperature:float) -> str: # 执行
         pass
+    
+    @abstractmethod
+    def set_custom_prompt(self, user_prompt: str, mode: str = "append"):
+        pass
 
+    @abstractmethod
+    def get_prompt(self) -> dict: # 获取提示词
+        pass        
+
+    @abstractmethod
+    def reload_prompt(self,role:str="mindmap"):
+        pass
+    
+            
 # --- Deepseek MindMap Model API ---
 class DeepseekMindMapModelAPI(BaseMindMapModelAPI):
     def __init__(self,
@@ -42,7 +55,7 @@ class DeepseekMindMapModelAPI(BaseMindMapModelAPI):
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
-        self.prompt_config = load_prompt(role)
+        self.prompt_config = load_prompt(role)  # 加载提示词
         self.temperature = temperature
 
     def generate_code(self, query: str, temperature: float = None) -> str: # 默认情况下不需要传入温度，模型中已经设置了默认值
@@ -79,6 +92,22 @@ class DeepseekMindMapModelAPI(BaseMindMapModelAPI):
     def change_temperature(self, temperature: float):
         self.temperature = temperature
 
+    def set_custom_prompt(self, user_prompt: str, mode: str = "append"):
+        if mode == "replace":
+            self.prompt_config["user_prefix"] = user_prompt
+        elif mode == "append":
+            self.prompt_config["user_prefix"] += "\n" + user_prompt
+        else:
+            raise ValueError("mode 只能是 'replace' 或 'append'")
+
+    def get_prompt(self) -> dict:
+        return {
+            "system": self.prompt_config.get("system", ""),
+            "user_prefix": self.prompt_config.get("user_prefix", "")
+        }
+
+    def reload_prompt(self,role:str="mindmap"):
+        self.prompt_config = load_prompt(role)  # 重新加载提示词
 
 # --- 总调度类 ---
 class MindMapGenerationManager:
