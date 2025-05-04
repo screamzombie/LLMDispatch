@@ -239,7 +239,7 @@ class DoubaoTextModelAPI(BaseTextModelAPI):
     def generate_text(self, query: str, temperature: float = None, **kwargs) -> str:
         current_temp = temperature if temperature is not None else self.temperature
         messages = []
-        if self.prompt_config.get("system"): # Check if system prompt exists
+        if self.prompt_config.get("system"): 
             messages.append({"role": "system", "content": self.prompt_config["system"]})
         messages.append({"role": "user", "content": self.prompt_config.get("user_prefix", "") + query})
 
@@ -288,15 +288,13 @@ class TextGenerationManager:
     def __init__(self, use_api: str = "deepseek", role: str = "summarizer", temperature: float = None):
         if use_api not in self._registry:
             raise ValueError(f"不支持的 API: {use_api}")
-        self.use_api = use_api
-        # Pass temperature if provided, otherwise let the class use its default
+        self.use_api = use_api        
         init_kwargs = {'role': role}
         if temperature is not None:
             init_kwargs['temperature'] = temperature
         self.client: BaseTextModelAPI = self._registry[use_api](**init_kwargs)
 
-    def generate_text(self, query: str, temperature: float = None, **kwargs) -> str:
-        # Pass temperature explicitly if provided, otherwise the client uses its internal state
+    def generate_text(self, query: str, temperature: float = None, **kwargs) -> str:        
         return self.client.generate_text(query, temperature=temperature, **kwargs)
 
     def change_temperature(self, temperature: float):
@@ -308,8 +306,7 @@ class TextGenerationManager:
     def get_prompt(self) -> dict:
         return self.client.get_prompt()
 
-    def reload_prompt(self, role: str = None):
-        # If role is None, the client's reload_prompt will use its current role
+    def reload_prompt(self, role: str = None):        
         self.client.reload_prompt(role)
 
     def switch_api(self, use_api: str, role: str = None, temperature: float = None):
@@ -320,7 +317,7 @@ class TextGenerationManager:
         current_temp = temperature if temperature is not None else self.client.temperature
         init_kwargs = {'role': current_role, 'temperature': current_temp}
         self.client = self._registry[use_api](**init_kwargs)
-        print(f"Switched to API: {use_api} with role: {current_role} and temperature: {current_temp}")
+
 
     def get_current_config(self) -> dict:
         return {
