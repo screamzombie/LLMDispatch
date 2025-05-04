@@ -1,30 +1,22 @@
-from dataclasses import dataclass
-from typing import Dict, Callable
-from enum import Enum, auto
 import logging
 
+from dataclasses import dataclass
+from typing import Dict, Callable
 from LLMHandle.LLMWorker.Text2TextModel import TextGenerationManager
 from LLMHandle.LLMWorker.Text2MindMapModel import MindMapGenerationManager
 
 
-class LLMStatus(Enum):
-    WAITING = auto()
-    WORKING = auto()
-
 
 @dataclass
-class LLMMaster:
-    status: LLMStatus = LLMStatus.WAITING
-
+class LLMMaster:    
     def default_run_llm_task(self, task_type: str, task_model: str, task_query: str, **kwargs):        
-        # 注册任务调度函数，每种 task_type 映射到一个 handler 函数
-        dispatcher: Dict[str, Callable[[str, str, str], str]] = {
+        # 注册任务调度函数，每种 task_type 映射到一个 handler 函数 返回一个可选的str 
+        dispatcher: Dict[str, Callable[[str, str, str], Optional[str]]] = {
             "summarizer": self._handle_text_task,
             "mindmap": self._handle_mindmap_task,            
         }
 
         handler = dispatcher.get(task_type)
-        
         if not handler:
             logging.error(f"不支持的 task_type: {task_type}")
             return "Unsupported task type"
