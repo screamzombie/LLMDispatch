@@ -1,11 +1,11 @@
 import logging
 
 from dataclasses import dataclass
-from typing import Dict, Callable
+from typing import Dict, Callable,Tuple, Optional
 from LLMHandle.LLMWorker.Text2TextModel import TextGenerationManager
 from LLMHandle.LLMWorker.Text2MindMapModel import MindMapGenerationManager
 from LLMHandle.LLMWorker.Text2EChartModel import EChartGenerationManager
-
+from LLMHandle.LLMWorker.Text2ImageModel import PictureGenerationManager
 
 @dataclass
 class LLMMaster:    
@@ -40,3 +40,9 @@ class LLMMaster:
             return f"EChart model {model} not registered"
         worker = EChartGenerationManager(use_api=model, role="chartgen", **kwargs)
         return worker.execute(query)
+
+    def _handle_picture_task(self, model: str, query: str, **kwargs)->Tuple[str, str]:
+        if model not in PictureGenerationManager._registry:
+            return f"Picture model {model} not registered"
+        worker = PictureGenerationManager(use_api=model, **kwargs)
+        return worker.generate_image(query)
