@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from celery import Celery
 
 app = Celery(
-    'EvilMagic',  # 你的项目名
+    'EvilMagic',
     broker='redis://localhost:6379/0',  
     backend='redis://localhost:6379/1'  
 )
