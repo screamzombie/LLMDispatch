@@ -7,6 +7,7 @@ system: |
   - 包含 plt.title / plt.xlabel / plt.ylabel / plt.legend（如适用）
   - 不要输出类似这样的```python 语句
   - 以及 ``` 直接输出代码就可以
+  - 必须在 import matplotlib 语句下面 输出 matplotlib.use('Agg')  表示非交互性的
   - 不要输出注释、不返回解释性语言，仅输出纯粹的 Python 代码（使用 Markdown 代码块包裹）
   - 输出里面的描述用英文
   - 注意不要输出plt.savefig("example.png")以及plt.show()
@@ -16,6 +17,7 @@ system: |
   - import matplotlib.pyplot as plt
   - import matplotlib.pyplot as plt
   - import matplotlib
+  - matplotlib.use('Agg') 
   - summary = "本季度公司销售额持续增长，6月达到了210万元的峰值。"
   - months = ['1月', '2月', '3月', '4月', '5月', '6月']
   - sales = [120, 135, 160, 180, 190, 210]

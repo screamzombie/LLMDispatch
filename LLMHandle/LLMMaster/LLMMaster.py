@@ -6,17 +6,20 @@ from LLMHandle.LLMWorker.Text2TextModel import TextGenerationManager
 from LLMHandle.LLMWorker.Text2MindMapModel import MindMapGenerationManager
 from LLMHandle.LLMWorker.Text2EChartModel import EChartGenerationManager
 from LLMHandle.LLMWorker.Text2ImageModel import PictureGenerationManager
+from LLMHandle.LLMWorker.Text2VideoModel import VideoGenerationManager
 
 @dataclass
 class LLMMaster:    
     def default_run_llm_task(self, task_type: str, task_model: str, task_query: str, **kwargs):        
         # 注册任务调度函数，每种 task_type 映射到一个 handler 函数 返回一个可选的str 
-        dispatcher: Dict[str, Callable[[str, str, str], Optional[str]]] = {
+        print("task_type: ", task_type,"task_model",task_model,"task_query",task_query)
+        dispatcher = {
             "summarizer": self._handle_text_task,
             "mindmap": self._handle_mindmap_task,    
-            "echar": self._handle_echart_task,        
+            "chart": self._handle_echart_task,    
+            "picture": self._handle_picture_task,
+            "video": self._handle_video_task,    
         }
-
         handler = dispatcher.get(task_type)
         if not handler:
             logging.error(f"不支持的 task_type: {task_type}")
@@ -36,6 +39,7 @@ class LLMMaster:
         return worker.execute(query)
 
     def _handle_echart_task(self, model: str, query: str, **kwargs) -> str:
+        print("开始生成echart")
         if model not in EChartGenerationManager._registry:
             return f"EChart model {model} not registered"
         worker = EChartGenerationManager(use_api=model, role="chartgen", **kwargs)
@@ -46,3 +50,9 @@ class LLMMaster:
             return f"Picture model {model} not registered"
         worker = PictureGenerationManager(use_api=model, **kwargs)
         return worker.generate_image(query)
+
+    def _handle_video_task(self, model: str, query: str, **kwargs)->Tuple[str, str]:
+        if model not in VideoGenerationManager._registry:
+            return f"Video model {model} not registered"
+        worker = VideoGenerationManager(use_api=model, **kwargs)
+        return worker.generate_video(query)
