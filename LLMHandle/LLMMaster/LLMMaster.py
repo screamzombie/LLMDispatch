@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Callable
 from LLMHandle.LLMWorker.Text2TextModel import TextGenerationManager
 from LLMHandle.LLMWorker.Text2MindMapModel import MindMapGenerationManager
-
+from LLMHandle.LLMWorker.Text2EChartModel import EChartGenerationManager
 
 
 @dataclass
@@ -13,7 +13,8 @@ class LLMMaster:
         # 注册任务调度函数，每种 task_type 映射到一个 handler 函数 返回一个可选的str 
         dispatcher: Dict[str, Callable[[str, str, str], Optional[str]]] = {
             "summarizer": self._handle_text_task,
-            "mindmap": self._handle_mindmap_task,            
+            "mindmap": self._handle_mindmap_task,    
+            "echar": self._handle_echart_task,        
         }
 
         handler = dispatcher.get(task_type)
@@ -32,4 +33,10 @@ class LLMMaster:
         if model not in MindMapGenerationManager._registry:
             return f"MindMap model {model} not registered"
         worker = MindMapGenerationManager(use_api=model, role="mindmap", **kwargs)
+        return worker.execute(query)
+
+    def _handle_echart_task(self, model: str, query: str, **kwargs) -> str:
+        if model not in EChartGenerationManager._registry:
+            return f"EChart model {model} not registered"
+        worker = EChartGenerationManager(use_api=model, role="chartgen", **kwargs)
         return worker.execute(query)

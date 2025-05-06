@@ -3,6 +3,10 @@
 ## 项目介绍
 ~~一个搞耍的，低并发的，低质量的，门可罗雀的项目。~~
 
+
+**🚧正在施工🚧**
+
+
 一个封装了国内主流大语言模型（LLM）API的项目。主要特性包括：
 
 *   **异步调用**：通过 Celery 实现对 LLM 任务的异步处理，提高响应速度和并发能力。
@@ -68,22 +72,25 @@ EvilMagic/
 
 1.  **启动 Celery Worker**
 
-    在项目根目录下运行以下命令启动 Celery Worker 来处理异步任务：
+    首先，确保您的 Redis 服务正在运行。然后在项目根目录下运行以下命令启动 Celery Worker 来处理异步任务：
 
     ```bash
-    celery -A celery worker --loglevel=info
-    ```
-    *(请确保 Redis 服务正在运行)*
-
-2.  **运行测试/示例**
-
-    可以通过 `LLMHandle/test/` 目录下的脚本来测试核心功能。例如，运行文本处理测试：
-
-    ```bash
-    python LLMHandle/test/test_text.py
+    PYTHONPATH=. celery -A evil_celery worker --loglevel=info
     ```
 
-    该脚本会演示如何通过 `LLMMaster` 异步调用 LLM Worker。
+2.  **运行示例与提交任务**
+
+    *   **运行内置测试**: 项目提供了测试脚本来验证核心功能。例如，运行文本处理测试：
+        ```bash
+        python LLMHandle/test/test_text.py
+        ```
+        该脚本会演示如何通过 `LLMMaster` 异步调用 LLM Worker。
+
+    *   **提交示例任务**: 使用 `run.py` 脚本向 Celery 队列提交一个示例任务：
+        ```bash
+        python run.py
+        ```
+        您可以查看 Celery Worker 的输出来观察任务处理过程，并根据需要修改 `run.py` 来提交不同的任务。
 
 ## 主要功能
 

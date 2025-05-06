@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+import uuid # Added for UUID generation
+import matplotlib.pyplot as plt # Added for plotting
+from typing import Tuple # Added for type hinting
 import requests
 from abc import ABC, abstractmethod
 from openai import OpenAI
-from LLMHandle.config import DEEPSEEK_API_KEY, QWEN_API_KEY, DOUBAO_API_KEY, XFYUN_API_KEY
+from LLMHandle.config import DEEPSEEK_API_KEY, QWEN_API_KEY, DOUBAO_API_KEY
 from LLMHandle.LLMWorker.PromptLoader import load_prompt 
 from dataclasses import dataclass
 
 
 # --- 抽象基类 ---
 @dataclass
-class BaseMindMapModelAPI(ABC):
+class BaseEChartModelAPI(ABC):
     temperature: float = 0.7 # 默认温度是0.7
     @abstractmethod
     def change_temperature(self, temperature: float): # 改变温度
@@ -26,7 +29,7 @@ class BaseMindMapModelAPI(ABC):
         pass
 
     @abstractmethod
-    def execute(self, query: str,temperature:float) -> str: # 执行
+    def execute(self, query: str,temperature:float) -> Tuple[str, str]: # 执行，返回 (uuid, image_path)
         pass
     
     @abstractmethod
@@ -38,17 +41,17 @@ class BaseMindMapModelAPI(ABC):
         pass        
 
     @abstractmethod
-    def reload_prompt(self,role:str="mindmap"):
+    def reload_prompt(self,role:str="chartgen"):
         pass
     
             
-# --- Deepseek MindMap Model API ---
-class DeepseekMindMapModelAPI(BaseMindMapModelAPI):
+# --- Deepseek Echart Model API ---
+class DeepseekEChartModelAPI(BaseEChartModelAPI):
     def __init__(self,
                  api_key: str = DEEPSEEK_API_KEY,
                  base_url: str = "https://api.deepseek.com",
                  model: str = "deepseek-chat",
-                 role: str = "mindmap",
+                 role: str = "chartgen",
                  temperature: float = 0.7): 
         
         super().__init__(temperature=temperature) 
@@ -74,20 +77,48 @@ class DeepseekMindMapModelAPI(BaseMindMapModelAPI):
         return response.choices[0].message.content.strip()
 
     def postprocess_code(self, code: str) -> str:        
-        if code.startswith("```mermaid\n"):
-            code = code[len("```mermaid\n"):]        
+        if code.startswith("```python\n"):
+            code = code[len("```python\n"):]        
         if code.endswith("\n```"):
             code = code[:-len("\n```")]    
         elif code.endswith("```"):
             code = code[:-len("```")]
+        
+        # Filter out unwanted plt lines
+        lines = code.split('\n')
+        filtered_lines = [line for line in lines if 'plt.savefig("example.png")' not in line and 'plt.show()' not in line]
+        code = '\n'.join(filtered_lines)
+        
         return code.strip() 
 
-    def execute(self, query: str, temperature: float = None) -> str:
+    def execute(self, query: str, temperature: float = None) -> Tuple[str, str]:
         if temperature is None:
             temperature = self.temperature
-        code = self.generate_code(query, temperature)
-        processed_code = self.postprocess_code(code)
-        return processed_code
+        
+        image_uuid = str(uuid.uuid4())
+        image_folder = os.path.join("results", "echart")
+        os.makedirs(image_folder, exist_ok=True)
+        image_path = os.path.join(image_folder, f"{image_uuid}.png")
+
+        try:
+            code = self.generate_code(query, temperature)
+            processed_code = self.postprocess_code(code)
+            
+            # Dynamically add imports and savefig
+            # Ensure matplotlib.pyplot is imported as plt for the exec environment
+            # Also, ensure other necessary imports for the generated code are present or handled by the LLM.
+            # For simplicity, we assume the LLM generates code that uses 'plt' for plotting.
+            execution_code = f"import matplotlib.pyplot as plt\n{processed_code}\nplt.savefig('{image_path}')\nplt.close()" # Added plt.close() to free resources
+            
+            # Create a dedicated scope for exec
+            exec_scope = {}
+            exec(execution_code, exec_scope) # Execute in a controlled scope
+            return image_uuid, image_path
+        except Exception as e:
+            print(f"Error executing EChart code for UUID {image_uuid}: {e}")
+            # Optionally, log the error or the problematic code
+            # Depending on requirements, could return (image_uuid, None) or raise e
+            return image_uuid, None # Return UUID and None for path if error occurs
 
     def change_temperature(self, temperature: float):
         self.temperature = temperature
@@ -106,17 +137,17 @@ class DeepseekMindMapModelAPI(BaseMindMapModelAPI):
             "user_prefix": self.prompt_config.get("user_prefix", "")
         }
 
-    def reload_prompt(self,role:str="mindmap"):
+    def reload_prompt(self,role:str="chartgen"):
         self.prompt_config = load_prompt(role)  # 重新加载提示词
 
 
-# --- Doubao MindMap Model API ---
-class DoubaoMindMapModelAPI(BaseMindMapModelAPI):
+# --- Doubao Model API ---
+class DoubaoEChartModelAPI(BaseEChartModelAPI):
     def __init__(self,
                  api_key: str = DOUBAO_API_KEY,
                  base_url: str = "https://ark.cn-beijing.volces.com/api/v3",
                  model: str = "doubao-1-5-thinking-pro-250415",
-                 role: str = "mindmap",
+                 role: str = "chartgen",
                  temperature: float = 0.7):
 
         super().__init__(temperature=temperature)
@@ -142,19 +173,41 @@ class DoubaoMindMapModelAPI(BaseMindMapModelAPI):
         return response.choices[0].message.content.strip()
 
     def postprocess_code(self, code: str) -> str:
-        if code.startswith("```mermaid\n"):
-            code = code[len("```mermaid\n"):]
+        if code.startswith("```python\n"):
+            code = code[len("```python\n"):]
         if code.endswith("\n```"):
             code = code[:-len("\n```")]
         elif code.endswith("```"):
             code = code[:-len("```")]
+        
+        # Filter out unwanted plt lines
+        lines = code.split('\n')
+        filtered_lines = [line for line in lines if 'plt.savefig("example.png")' not in line and 'plt.show()' not in line]
+        code = '\n'.join(filtered_lines)
+        
         return code.strip()
 
-    def execute(self, query: str, temperature: float = None) -> str:
+    def execute(self, query: str, temperature: float = None) -> Tuple[str, str]:
         if temperature is None:
             temperature = self.temperature
-        code = self.generate_code(query, temperature)
-        return self.postprocess_code(code)
+
+        image_uuid = str(uuid.uuid4())
+        image_folder = os.path.join("results", "echart")
+        os.makedirs(image_folder, exist_ok=True)
+        image_path = os.path.join(image_folder, f"{image_uuid}.png")
+
+        try:
+            code = self.generate_code(query, temperature)
+            processed_code = self.postprocess_code(code)
+            
+            execution_code = f"import matplotlib.pyplot as plt\n{processed_code}\nplt.savefig('{image_path}')\nplt.close()"
+            
+            exec_scope = {}
+            exec(execution_code, exec_scope)
+            return image_uuid, image_path
+        except Exception as e:
+            print(f"Error executing EChart code for UUID {image_uuid}: {e}")
+            return image_uuid, None
 
     def change_temperature(self, temperature: float):
         self.temperature = temperature
@@ -173,15 +226,16 @@ class DoubaoMindMapModelAPI(BaseMindMapModelAPI):
             "user_prefix": self.prompt_config.get("user_prefix", "")
         }
 
-    def reload_prompt(self, role: str = "mindmap"):
+    def reload_prompt(self, role: str = "chartgen"):
         self.prompt_config = load_prompt(role)
 
-class QwenMindMapModelAPI(BaseMindMapModelAPI):
+# ------------- Qwen Model API ------------
+class QwenEChartModelAPI(BaseEChartModelAPI):
     def __init__(self,
                  api_key: str = QWEN_API_KEY,
                  base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1",
                  model: str = "qwen-plus",
-                 role: str = "mindmap",
+                 role: str = "chartgen",
                  temperature: float = 0.7):
 
         super().__init__(temperature=temperature)
@@ -207,19 +261,41 @@ class QwenMindMapModelAPI(BaseMindMapModelAPI):
         return response.choices[0].message.content.strip()
 
     def postprocess_code(self, code: str) -> str:
-        if code.startswith("```mermaid\n"):
-            code = code[len("```mermaid\n"):]
+        if code.startswith("```python\n"):
+            code = code[len("```python\n"):]
         if code.endswith("\n```"):
             code = code[:-len("\n```")]
         elif code.endswith("```"):
             code = code[:-len("```")]
+        
+        # Filter out unwanted plt lines
+        lines = code.split('\n')
+        filtered_lines = [line for line in lines if 'plt.savefig("example.png")' not in line and 'plt.show()' not in line]
+        code = '\n'.join(filtered_lines)
+        
         return code.strip()
 
-    def execute(self, query: str, temperature: float = None) -> str:
+    def execute(self, query: str, temperature: float = None) -> Tuple[str, str]:
         if temperature is None:
             temperature = self.temperature
-        code = self.generate_code(query, temperature)
-        return self.postprocess_code(code)
+
+        image_uuid = str(uuid.uuid4())
+        image_folder = os.path.join("results", "echart")
+        os.makedirs(image_folder, exist_ok=True)
+        image_path = os.path.join(image_folder, f"{image_uuid}.png")
+
+        try:
+            code = self.generate_code(query, temperature)
+            processed_code = self.postprocess_code(code)
+            
+            execution_code = f"import matplotlib.pyplot as plt\n{processed_code}\nplt.savefig('{image_path}')\nplt.close()"
+            
+            exec_scope = {}
+            exec(execution_code, exec_scope)
+            return image_uuid, image_path
+        except Exception as e:
+            print(f"Error executing EChart code for UUID {image_uuid}: {e}")
+            return image_uuid, None
 
     def change_temperature(self, temperature: float):
         self.temperature = temperature
@@ -238,25 +314,25 @@ class QwenMindMapModelAPI(BaseMindMapModelAPI):
             "user_prefix": self.prompt_config.get("user_prefix", "")
         }
 
-    def reload_prompt(self, role: str = "mindmap"):
+    def reload_prompt(self, role: str = "chartgen"):
         self.prompt_config = load_prompt(role)
 
 
 
 # --- 总调度类 ---
-class MindMapGenerationManager:
+class EChartGenerationManager:
     _registry = {
-        "deepseek": DeepseekMindMapModelAPI,     
-        "doubao": DoubaoMindMapModelAPI,   
-        "qwen": QwenMindMapModelAPI       
+        "deepseek": DeepseekEChartModelAPI,     
+        "doubao": DoubaoEChartModelAPI,   
+        "qwen": QwenEChartModelAPI,       
     }
 
-    def __init__(self, use_api: str = "deepseek", role: str = "mindmap"):
+    def __init__(self, use_api: str = "deepseek", role: str = "chartgen"):
         if use_api not in self._registry:
             raise ValueError(f"不支持的 API: {use_api}")
         self.use_api = use_api
         self.client = self._registry[use_api](role=role)
 
-    def execute(self, query: str) -> str:
+    def execute(self, query: str) -> Tuple[str, str]:
         return self.client.execute(query)
 

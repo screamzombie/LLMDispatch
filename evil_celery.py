@@ -6,8 +6,8 @@ from celery import Celery
 
 app = Celery(
     'EvilMagic',  # 你的项目名
-    broker='redis://localhost:6379/0',   # ✅ Redis 作为消息队列
-    backend='redis://localhost:6379/1'   # ✅ Redis 作为结果存储（可选）
+    broker='redis://localhost:6379/0',  
+    backend='redis://localhost:6379/1'  
 )
 
 app.conf.update(
