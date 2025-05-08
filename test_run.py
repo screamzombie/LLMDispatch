@@ -17,14 +17,15 @@ if __name__ == "__main__":
     print("正在开始测试")
     results_with_time = []
     tasks_to_submit = [
-        ("summarizer", "deepseek", TEXT),
+        ("summarizer", "doubao", TEXT),
         ("mindmap", "doubao", TEXT),
-        ("chart", "deepseek", TEXT),
-        ("picture", "qwen", "一只猫在月球行走"),
-        ("picture", "kling", "一只猫在月球行走"),
-        ("video", "qwen", "一只猫在月球行走"),
-        ("video", "kling", "一只猫在月球行走"),
+        ("chart", "doubao", TEXT),
+        # ("picture", "qwen", "一只猫在月球行走"),
+        # ("picture", "kling", "一只猫在月球行走"),
+        # ("video", "qwen", "一只猫在月球行走"),
+        # ("video", "kling", "一只猫在月球行走"),
     ]
+    # run_llm_task.delay("mindmap", "doubao", TEXT)
     for task_args in tasks_to_submit:
         submit_time = datetime.datetime.now()
         res = run_llm_task.delay(*task_args)

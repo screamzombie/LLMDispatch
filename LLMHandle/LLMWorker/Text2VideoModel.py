@@ -27,6 +27,9 @@ class BaseVideoModelAPI(ABC):
     def generate_video(self, query: str, **kwargs) -> Tuple[str, str]: # 返回 (uuid, video_path)
         pass
 
+    @abstractmethod
+    def check_api_availability(self) -> bool:
+        pass
 
 
 
@@ -105,7 +108,10 @@ class DashScopeVideoAPI:
         print(f"✅ Qwen 视频下载完成：{file_path}")
         return video_uuid, file_path
 
-
+    def check_api_availability(self) -> bool:
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        resp = requests.get(self.submit_url, headers=headers)
+        return resp.status_code == 200
 
 
 

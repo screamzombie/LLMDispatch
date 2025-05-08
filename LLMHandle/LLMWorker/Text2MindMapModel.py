@@ -251,7 +251,7 @@ class MindMapGenerationManager:
         "qwen": QwenMindMapModelAPI       
     }
 
-    def __init__(self, use_api: str = "deepseek", role: str = "mindmap"):
+    def __init__(self, use_api: str = "doubao", role: str = "mindmap"):
         if use_api not in self._registry:
             raise ValueError(f"不支持的 API: {use_api}")
         self.use_api = use_api

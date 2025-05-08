@@ -180,7 +180,6 @@ class DoubaoEChartModelAPI(BaseEChartModelAPI):
         elif code.endswith("```"):
             code = code[:-len("```")]
         
-        # Filter out unwanted plt lines
         lines = code.split('\n')
         filtered_lines = [line for line in lines if 'plt.savefig("example.png")' not in line and 'plt.show()' not in line]
         code = '\n'.join(filtered_lines)
@@ -327,7 +326,7 @@ class EChartGenerationManager:
         "qwen": QwenEChartModelAPI,       
     }
 
-    def __init__(self, use_api: str = "deepseek", role: str = "chartgen"):
+    def __init__(self, use_api: str = "doubao", role: str = "chartgen"):
         if use_api not in self._registry:
             raise ValueError(f"不支持的 API: {use_api}")
         self.use_api = use_api
